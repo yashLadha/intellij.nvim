@@ -77,7 +77,6 @@ function M.eula_accepted(dir)
   return hash ~= nil and stored ~= nil and vim.trim(stored) == hash
 end
 
---- Shows the EULA and asks the user to accept it; persists the hash on acceptance.
 ---@param dir string
 ---@param cb fun(accepted: boolean)
 function M.accept_eula(dir, cb)
