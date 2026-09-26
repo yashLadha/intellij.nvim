@@ -74,8 +74,7 @@ local function check_java(config)
   end
 end
 
----@param config intellij.Config
-local function check_lsp(config)
+local function check_lsp()
   if vim.lsp.is_enabled('intellij') then
     vim.health.ok('intellij LSP config is enabled')
   else
@@ -85,7 +84,7 @@ local function check_lsp(config)
     })
   end
   local ours = {}
-  for _, ft in ipairs(config.filetypes) do
+  for _, ft in ipairs(vim.lsp.config.intellij.filetypes or {}) do
     ours[ft] = true
   end
   for _, name in ipairs(conflicting) do
@@ -122,10 +121,19 @@ function M.check()
     vim.health.error('Invalid configuration: ' .. tostring(config))
     return
   end
-  if #config.filetypes == 0 then
+  local filetypes = vim.lsp.config.intellij.filetypes or {}
+  if #filetypes == 0 then
     vim.health.warn('filetypes is empty; the server will not attach to any buffer')
   else
-    vim.health.ok('filetypes: ' .. table.concat(config.filetypes, ', '))
+    vim.health.ok('filetypes: ' .. table.concat(filetypes, ', '))
+  end
+  for _, tool in ipairs({ 'curl', 'unzip', 'tar' }) do
+    if vim.fn.executable(tool) == 0 then
+      vim.health.warn(tool .. ' not found; :IntelliJ install needs it')
+    end
+  end
+  if vim.fn.executable('sha256sum') == 0 and vim.fn.executable('shasum') == 0 then
+    vim.health.warn('sha256sum or shasum not found; :IntelliJ install needs one')
   end
 
   vim.health.start('intellij.nvim: server')
@@ -135,7 +143,7 @@ function M.check()
   check_java(config)
 
   vim.health.start('intellij.nvim: lsp')
-  check_lsp(config)
+  check_lsp()
 end
 
 return M

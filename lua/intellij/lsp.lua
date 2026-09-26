@@ -92,6 +92,21 @@ function M.before_init(params, config)
   params.initializationOptions = M.init_options(config)
 end
 
+local exit_hints = {
+  [7] = 'this server build has expired, run :IntelliJ install to update',
+  [11] = 'EULA not accepted, run :IntelliJ eula',
+}
+
+---@param code integer
+function M.on_exit(code)
+  local hint = exit_hints[code]
+  if hint then
+    vim.schedule(function()
+      vim.notify('intellij: ' .. hint, vim.log.levels.ERROR)
+    end)
+  end
+end
+
 ---@class intellij.ImportFolder
 ---@field folderUri string
 ---@field tool? string

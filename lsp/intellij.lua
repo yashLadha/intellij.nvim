@@ -1,6 +1,6 @@
 ---@type vim.lsp.Config
 return {
-  filetypes = { 'java' },
+  filetypes = require('intellij.config').get().filetypes,
   cmd = function(dispatchers, config)
     return require('intellij.lsp').cmd(dispatchers, config)
   end,
@@ -11,5 +11,8 @@ return {
     require('intellij.lsp').before_init(params, config)
   end,
   handlers = require('intellij.lsp').handlers,
+  on_exit = function(code)
+    require('intellij.lsp').on_exit(code)
+  end,
   workspace_required = true,
 }
