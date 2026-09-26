@@ -156,8 +156,34 @@ local phase_message = {
   CANCELLED = 'workspace import cancelled',
 }
 
+--- The server numbers document versions by counting changes from 0, while
+--- Neovim uses the buffer's changedtick, so its versioned edits always look
+--- stale once the buffer has been modified. Drop the versions before applying.
+---@param edit? lsp.WorkspaceEdit
+---@return lsp.WorkspaceEdit?
+function M.unversion(edit)
+  for _, change in ipairs(edit and edit.documentChanges or {}) do
+    if change.textDocument then
+      change.textDocument.version = vim.NIL
+    end
+  end
+  return edit
+end
+
 ---@type table<string, lsp.Handler>
 M.handlers = {
+  ['textDocument/rename'] = function(err, result, ctx, config)
+    return vim.lsp.handlers['textDocument/rename'](err, M.unversion(result), ctx, config)
+  end,
+
+  ---@param result lsp.ApplyWorkspaceEditParams
+  ['workspace/applyEdit'] = function(err, result, ctx, config)
+    if result then
+      M.unversion(result.edit)
+    end
+    return vim.lsp.handlers['workspace/applyEdit'](err, result, ctx, config)
+  end,
+
   ---@param result intellij.WorkspaceImportState
   ['intellij/workspaceImportState'] = function(_, result, ctx)
     local failed = {}
@@ -205,6 +231,15 @@ M.handlers = {
 M.commands = {
   ['editor.action.triggerParameterHints'] = function()
     vim.lsp.buf.signature_help()
+  end,
+  -- Sent after postfix templates such as `.var` to name the introduced variable.
+  ['editor.action.rename'] = function(_, ctx)
+    vim.lsp.buf.rename(nil, {
+      bufnr = ctx.bufnr,
+      filter = function(client)
+        return client.id == ctx.client_id
+      end,
+    })
   end,
   ['jetbrains.navigateToLocation'] = function(command, ctx)
     local uri, line, character = unpack(command.arguments or {})
