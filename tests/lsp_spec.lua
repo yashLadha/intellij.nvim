@@ -60,6 +60,52 @@ return {
     h.eq(false, calls[1].opts.filter({ id = 8 }))
   end,
 
+  ['completion apply answers a ChooseAction with the selected index'] = function()
+    setup_config({})
+    local requests = {}
+    local client = {
+      request = function(_, method, params)
+        requests[#requests + 1] = { method, params }
+      end,
+    }
+    local get_client, select = vim.lsp.get_client_by_id, vim.ui.select
+    vim.lsp.get_client_by_id = function()
+      return client
+    end
+    local prompt
+    vim.ui.select = function(items, opts, on_choice)
+      prompt = opts.prompt
+      on_choice(items[2])
+    end
+    local choose = {
+      kind = 'com.jetbrains.ls.kotlinLsp.requests.core.ModCommandData.ChooseAction',
+      sessionId = 5,
+      title = 'Multiple occurrences found',
+      entries = { { index = 0, name = 'this only' }, { index = 1, name = 'all' } },
+    }
+    local apply = vim.lsp.commands['jetbrains.java.completion.apply']
+    local ok, err = pcall(function()
+      apply(
+        { command = 'jetbrains.java.completion.apply', arguments = { choose } },
+        { client_id = 1 }
+      )
+      apply({ command = 'jetbrains.java.completion.apply', arguments = { 'x' } }, { client_id = 1 })
+    end)
+    vim.lsp.get_client_by_id, vim.ui.select = get_client, select
+    assert(ok, err)
+    h.eq('Multiple occurrences found', prompt)
+    h.eq({
+      {
+        'workspace/executeCommand',
+        { command = 'chooseModCommandAction', arguments = { 5, 1 } },
+      },
+      {
+        'workspace/executeCommand',
+        { command = 'jetbrains.java.completion.apply', arguments = { 'x' } },
+      },
+    }, requests)
+  end,
+
   ['server edits apply to a modified buffer'] = function()
     local lsp = setup_config({})
     local bufnr = vim.api.nvim_create_buf(false, true)

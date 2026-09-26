@@ -227,8 +227,47 @@ M.handlers = {
   end,
 }
 
+---@class intellij.ChooseAction
+---@field kind string
+---@field sessionId integer
+---@field title string
+---@field entries { index: integer, name: string }[]
+
+--- Completions that need a choice, such as `.var` on an expression with
+--- several occurrences, carry a ChooseAction the client must answer with
+--- `chooseModCommandAction`. Anything else is executed by the server.
+---@param command lsp.Command
+---@param ctx table
+local function apply_completion(command, ctx)
+  local client = vim.lsp.get_client_by_id(ctx.client_id)
+  if not client then
+    return
+  end
+  ---@type intellij.ChooseAction?
+  local choose = command.arguments and command.arguments[1]
+  if type(choose) ~= 'table' or not vim.endswith(choose.kind or '', '.ChooseAction') then
+    client:request('workspace/executeCommand', command, nil, ctx.bufnr)
+    return
+  end
+  vim.ui.select(choose.entries, {
+    prompt = choose.title,
+    format_item = function(entry)
+      return entry.name
+    end,
+  }, function(entry)
+    if entry then
+      client:request('workspace/executeCommand', {
+        command = 'chooseModCommandAction',
+        arguments = { choose.sessionId, entry.index },
+      }, nil, ctx.bufnr)
+    end
+  end)
+end
+
 ---@type table<string, fun(command: lsp.Command, ctx: table)>
 M.commands = {
+  ['jetbrains.java.completion.apply'] = apply_completion,
+  ['jetbrains.kotlin.completion.apply'] = apply_completion,
   ['editor.action.triggerParameterHints'] = function()
     vim.lsp.buf.signature_help()
   end,
