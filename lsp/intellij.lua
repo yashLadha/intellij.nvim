@@ -5,7 +5,10 @@ return {
     return require('intellij.lsp').cmd(dispatchers, config)
   end,
   root_dir = function(bufnr, on_dir)
-    require('intellij.lsp').root_dir(bufnr, on_dir)
+    local lsp = require('intellij.lsp')
+    if lsp.ready() then
+      lsp.root_dir(bufnr, on_dir)
+    end
   end,
   before_init = function(params, config)
     require('intellij.lsp').before_init(params, config)

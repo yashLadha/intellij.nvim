@@ -38,4 +38,16 @@ return {
       lsp.cmd({}, { root_dir = h.tmpdir() })
     end, 'IntelliJ eula')
   end,
+
+  ['ready is false until the server is installed and the EULA accepted'] = function()
+    local dir = h.tmpdir()
+    h.fake_server(dir)
+    local lsp, server = setup_config({ server_dir = dir })
+    h.eq(false, lsp.ready())
+    vim.fn.writefile(
+      { server.eula_hash(dir) },
+      vim.fs.joinpath(require('intellij.config').get().data_dir, 'eula')
+    )
+    h.eq(true, lsp.ready())
+  end,
 }

@@ -6,6 +6,18 @@ function M.system_path(root)
   return vim.fs.joinpath(vim.fn.stdpath('cache'), 'intellij', vim.fn.sha256(root):sub(1, 12))
 end
 
+---@return boolean
+function M.ready()
+  local server = require('intellij.server')
+  local dir = server.dir()
+  local problem = not dir and 'server not installed, run :IntelliJ install'
+    or not server.eula_accepted(dir) and 'EULA not accepted, run :IntelliJ eula'
+  if problem then
+    vim.notify_once('intellij: ' .. problem, vim.log.levels.WARN)
+  end
+  return not problem
+end
+
 ---@param dispatchers vim.lsp.rpc.Dispatchers
 ---@param config vim.lsp.ClientConfig
 ---@return vim.lsp.rpc.Client

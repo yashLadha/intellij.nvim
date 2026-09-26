@@ -63,7 +63,17 @@ return {
 
   ['attaches only to configured filetypes'] = function()
     h.reset()
-    require('intellij').setup({ filetypes = { 'java' }, data_dir = h.tmpdir() })
+    local server_dir, data_dir = h.tmpdir(), h.tmpdir()
+    h.fake_server(server_dir)
+    require('intellij').setup({
+      filetypes = { 'java' },
+      server_dir = server_dir,
+      data_dir = data_dir,
+    })
+    vim.fn.writefile(
+      { require('intellij.server').eula_hash(server_dir) },
+      vim.fs.joinpath(data_dir, 'eula')
+    )
     require('intellij.lsp').cmd = fake_rpc
     local java, kotlin = open('java'), open('kotlin')
     h.eq(true, attached(java))
