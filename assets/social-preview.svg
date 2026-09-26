@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640">
+  <defs>
+    <linearGradient id="bannerbg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#161d28"/>
+      <stop offset="1" stop-color="#07090d"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.3" r="0.6">
+      <stop offset="0" stop-color="#ff318c" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#ff318c" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#88c649"/>
+      <stop offset="0.35" stop-color="#16b0ed"/>
+      <stop offset="0.7" stop-color="#ff318c"/>
+      <stop offset="1" stop-color="#ff8100"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="640" fill="url(#bannerbg)"/>
+  <rect width="1280" height="640" fill="url(#glow)"/>
+  <svg x="540" y="64" width="200" height="200" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1b2330"/>
+      <stop offset="1" stop-color="#0b0f15"/>
+    </linearGradient>
+    <linearGradient id="left" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#16b0ed"/>
+      <stop offset="1" stop-color="#0f59b4"/>
+    </linearGradient>
+    <linearGradient id="right" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#88c649"/>
+      <stop offset="1" stop-color="#439e47"/>
+    </linearGradient>
+    <linearGradient id="diag" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#b3e573"/>
+      <stop offset="1" stop-color="#5fb950"/>
+    </linearGradient>
+    <linearGradient id="badge" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff8100"/>
+      <stop offset="0.5" stop-color="#ff318c"/>
+      <stop offset="1" stop-color="#6b57ff"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="56" fill="url(#bg)"/>
+  <g transform="translate(34 40)">
+    <path d="M0 26 L26 0 V150 L0 124 Z" fill="url(#left)"/>
+    <path d="M26 0 L104 150 H78 L0 26 Z" fill="url(#diag)" opacity="0.92"/>
+    <path d="M78 0 L104 26 V124 L78 150 Z" fill="url(#right)"/>
+  </g>
+  <g transform="translate(128 112)">
+    <rect x="-8" y="-8" width="120" height="120" rx="24" fill="#10151d"/>
+    <rect width="104" height="104" rx="18" fill="url(#badge)"/>
+    <rect x="12" y="12" width="80" height="80" rx="6" fill="#000"/>
+    <text x="22" y="62" font-family="JetBrains Mono, SF Mono, Menlo, Consolas, monospace" font-size="38" font-weight="800" fill="#fff">IJ</text>
+    <rect x="22" y="74" width="30" height="6" fill="#fff"/>
+  </g>
+  </svg>
+  <text x="640" y="364" text-anchor="middle" font-family="JetBrains Mono, SF Mono, Menlo, Consolas, monospace" font-size="92" font-weight="800" fill="#f5f7fa">intellij<tspan fill="#88c649">.nvim</tspan></text>
+  <rect x="460" y="390" width="360" height="6" rx="3" fill="url(#accent)"/>
+  <text x="640" y="450" text-anchor="middle" font-family="Inter, SF Pro Display, Segoe UI, Helvetica, Arial, sans-serif" font-size="30" fill="#b8c1cc">IntelliJ IDEA's Java and Kotlin intelligence, native in Neovim</text>
+  <g font-family="JetBrains Mono, SF Mono, Menlo, Consolas, monospace" font-size="20" fill="#e6ebf1">
+    <rect x="354" y="484" width="170" height="40" rx="20" fill="#1f2835" stroke="#2f3b4c"/>
+    <text x="439" y="510" text-anchor="middle">Neovim 0.12+</text>
+    <rect x="540" y="484" width="170" height="40" rx="20" fill="#1f2835" stroke="#2f3b4c"/>
+    <text x="625" y="510" text-anchor="middle">native LSP</text>
+    <rect x="726" y="484" width="200" height="40" rx="20" fill="#1f2835" stroke="#2f3b4c"/>
+    <text x="826" y="510" text-anchor="middle">Java + Kotlin</text>
+  </g>
+  <text x="640" y="592" text-anchor="middle" font-family="JetBrains Mono, SF Mono, Menlo, Consolas, monospace" font-size="20" fill="#6b7686">github.com/yashLadha/intellij-neovim</text>
+</svg>
