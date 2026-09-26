@@ -117,7 +117,7 @@ end
 
 ---@return string? target
 ---@return string? err
-local function target()
+function M.target()
   local uname = vim.uv.os_uname()
   local os = ({ Darwin = 'darwin', Linux = 'linux', Windows_NT = 'win32' })[uname.sysname]
   local arch = ({
@@ -167,7 +167,7 @@ function M.install(cb)
   if installing then
     return cb('install already in progress')
   end
-  local tgt, terr = target()
+  local tgt, terr = M.target()
   if not tgt then
     return cb(terr)
   end

@@ -10,6 +10,39 @@ local known_keys = {
 
 local conflicting = { 'jdtls', 'kotlin_lsp' }
 
+-- Highest GLIBC_* symbol version referenced by the bundled JBR in server 263.x.
+local min_glibc = '2.28'
+
+---@return string?
+local function glibc_version()
+  local ok, res = pcall(function()
+    return vim.system({ 'getconf', 'GNU_LIBC_VERSION' }, { text = true }):wait()
+  end)
+  return ok and res.code == 0 and (res.stdout or ''):match('glibc%s+([%d.]+)') or nil
+end
+
+local function check_platform()
+  local target, err = require('intellij.server').target()
+  if not target then
+    vim.health.error(err .. '; no server build exists for it')
+    return
+  end
+  vim.health.ok('Platform: ' .. target)
+  if not vim.startswith(target, 'linux') then
+    return
+  end
+  local glibc = glibc_version()
+  if not glibc then
+    vim.health.error('Could not detect glibc (musl-based systems are not supported)', {
+      'The server requires glibc >= ' .. min_glibc,
+    })
+  elseif vim.version.lt(glibc, min_glibc) then
+    vim.health.error(('glibc %s is too old; the server requires >= %s'):format(glibc, min_glibc))
+  else
+    vim.health.ok('glibc ' .. glibc)
+  end
+end
+
 local function check_user_config()
   local g = vim.g.intellij
   if g == nil then
@@ -135,6 +168,9 @@ function M.check()
   if vim.fn.executable('sha256sum') == 0 and vim.fn.executable('shasum') == 0 then
     vim.health.warn('sha256sum or shasum not found; :IntelliJ install needs one')
   end
+
+  vim.health.start('intellij.nvim: platform')
+  check_platform()
 
   vim.health.start('intellij.nvim: server')
   check_server(config)

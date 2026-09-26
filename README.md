@@ -12,6 +12,7 @@ Run JetBrains' [IntelliJ Language Server](https://blog.jetbrains.com/idea/2026/0
 ## Requirements
 
 - Neovim 0.12+
+- macOS, Windows, or Linux with glibc 2.28+ (x64 or arm64)
 - A JDK, and Maven, Gradle or Bazel for project import
 - `curl`, `unzip`, `tar`, `sha256sum` or `shasum` for the installer
 
