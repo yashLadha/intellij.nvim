@@ -1,0 +1,224 @@
+*intellij.txt*  IntelliJ Language Server for Neovim
+
+Author:  Yash Ladha
+License: MIT
+
+==============================================================================
+CONTENTS                                                   *intellij-contents*
+
+  1. Introduction ........................................ |intellij|
+  2. Requirements ........................... |intellij-requirements|
+  3. Setup ........................................ |intellij-setup|
+  4. Configuration ................................ |intellij-config|
+  5. Completion ............................... |intellij-completion|
+  6. Commands ................................... |intellij-commands|
+  7. Health ....................................... |intellij-health|
+  8. Troubleshooting ..................... |intellij-troubleshooting|
+  9. Licensing ................................. |intellij-licensing|
+
+==============================================================================
+1. INTRODUCTION                                                     *intellij*
+
+intellij.nvim runs JetBrains' IntelliJ Language Server (the "Java & Kotlin by
+IntelliJ IDEA" preview, published as the VS Code extension
+`JetBrains.intellij-server`) using the native |vim.lsp.config()| and
+|vim.lsp.enable()| API. It downloads and verifies the server, handles EULA
+acceptance, starts one server per project root, opens decompiled JDK and
+library sources and reports project import progress.
+
+The server only attaches to the configured filetypes: "java" by default,
+Kotlin is opt-in.
+
+Features:
+- completion, including signature help triggered from completion items
+- hover
+- go to definition, including JDK and library sources opened as read-only
+  `jar:` and `jrt:` buffers
+- references, implementations, type definition
+- rename
+- code actions and quick fixes
+- formatting
+- diagnostics
+- inlay hints
+- semantic tokens
+- call and type hierarchy
+- Maven, Gradle and Bazel project import with progress messages
+
+No keymaps are defined. Neovim provides the defaults, see |lsp-defaults|:
+|K|, |grn|, |gra|, |grr|, |gri|, |grt|, |grx|, |gO|, |i_CTRL-S|.
+
+==============================================================================
+2. REQUIREMENTS                                        *intellij-requirements*
+
+- Neovim >= 0.12
+- `curl`, `unzip`, `tar` and `sha256sum` or `shasum` for |:IntelliJ| install
+- about 376 MB of download and disk space for the server
+- a JDK, see `java_home` in |intellij-config|
+- Maven (`mvn` on $PATH or a wrapper), Gradle (on $PATH or a wrapper) or
+  Bazel
+- macOS, Linux or Windows on x64 or arm64
+
+A locally installed IntelliJ IDEA cannot be reused: the language server is a
+separate product and is always downloaded by `:IntelliJ install`.
+
+==============================================================================
+3. SETUP                                                      *intellij-setup*
+
+With lazy.nvim: >lua
+    {
+      'yashLadha/intellij-neovim',
+      main = 'intellij',
+      opts = { filetypes = { 'java' } },
+    }
+<
+`main` is required because the module name differs from the repository name.
+
+With |vim.pack|: >lua
+    vim.pack.add({ 'https://github.com/yashLadha/intellij-neovim' })
+    require('intellij').setup({ filetypes = { 'java' } })
+<
+Quick start:
+1. Run `:IntelliJ install`. The EULA opens in a new tab afterwards.
+2. Choose "Accept". Run `:IntelliJ eula` to show it again.
+3. Open a Java file inside a Maven, Gradle or Bazel project.
+
+                                                           *intellij.setup()*
+setup({opts})
+    Validates {opts}, sets `filetypes` on the "intellij" LSP config with
+    |vim.lsp.config()| and calls `vim.lsp.enable('intellij')`.
+
+==============================================================================
+4. CONFIGURATION                                             *intellij-config*
+
+Options for |intellij.setup()|:
+
+filetypes     `string[]`  (default: `{ 'java' }`)
+    Filetypes the server attaches to. Replaces the default list.
+
+server_dir    `string?`   (default: nil)
+    Path to an unpacked server directory. Overrides any installed server.
+
+data_dir      `string`    (default: `stdpath('data') .. '/intellij'`)
+    Holds installed servers in `servers/<version>` and the accepted EULA
+    hash in `eula`.
+
+java_home     `string?`   (default: $JAVA_HOME)
+    JDK sent to the server as `defaultSdk` for project import.
+
+jvm_options   `string[]`  (default: `{}`)
+    JVM options for the server, appended to $IJ_JAVA_OPTIONS.
+
+Example: >lua
+    require('intellij').setup({
+      filetypes = { 'java', 'kotlin' },
+      jvm_options = { '-Xmx4g' },
+    })
+<
+                                                                *g:intellij*
+Native configuration without |intellij.setup()|: the plugin ships
+`lsp/intellij.lua`, so the core API alone is enough. Options are read from
+the `vim.g.intellij` table: >lua
+    vim.g.intellij = { filetypes = { 'java', 'kotlin' } }
+    vim.lsp.enable('intellij')
+<
+`vim.lsp.config('intellij', { filetypes = { ... } })` also works and takes
+precedence. `vim.g.intellij` is ignored once |intellij.setup()| has been
+called.
+
+Any other |vim.lsp.Config| field (`settings`, `init_options`, `on_attach`,
+`capabilities`, ...) goes through `vim.lsp.config('intellij', {...})`.
+`init_options` are deep-merged over
+`{ intellijExtensions = true, defaultSdk = <java_home> }`. The server drops
+the whole object if any field is invalid.
+
+Project root, first match wins:
+1. nearest `settings.gradle`, `settings.gradle.kts`, `MODULE.bazel`,
+   `WORKSPACE` or `WORKSPACE.bazel`
+2. outermost directory of a chain of nested `pom.xml` files
+3. nearest `pom.xml`, `build.gradle`, `build.gradle.kts`, `BUILD.bazel` or
+   `.git`
+Files outside any root are not attached.
+
+==============================================================================
+5. COMPLETION                                            *intellij-completion*
+
+Built-in completion, see |vim.lsp.completion.enable()|: >lua
+    vim.api.nvim_create_autocmd('LspAttach', {
+      callback = function(ev)
+        local client = assert(vim.lsp.get_client_by_id(ev.data.client_id))
+        if client.name == 'intellij'
+          and client:supports_method('textDocument/completion') then
+          vim.lsp.completion.enable(true, client.id, ev.buf,
+            { autotrigger = true })
+        end
+      end,
+    })
+<
+blink.cmp and nvim-cmp also work; pass their capabilities through
+`vim.lsp.config('intellij', { capabilities = ... })`.
+
+==============================================================================
+6. COMMANDS                                    *intellij-commands* *:IntelliJ*
+
+:IntelliJ install                                          *:IntelliJ-install*
+    Download the latest server for this platform into
+    `<data_dir>/servers/<version>`, verify its sha256 and prompt for the EULA
+    if it was not accepted. Does nothing if that version is installed.
+
+:IntelliJ eula                                                *:IntelliJ-eula*
+    Show the EULA of the current server and accept or decline it.
+
+:IntelliJ reload                                            *:IntelliJ-reload*
+    Ask the server attached to the current buffer to reimport the workspace
+    (`intellij/reloadWorkspace`).
+
+:IntelliJ log                                                  *:IntelliJ-log*
+    Open the server log of the current buffer's client in a new tab, or the
+    Neovim LSP log if there is none.
+
+==============================================================================
+7. HEALTH                                                    *intellij-health*
+
+`:checkhealth intellij` checks the Neovim version, the configuration, the
+server directory and executable, EULA status, `java_home`, whether `mvn` and
+`gradle` are on $PATH, whether the "intellij" config is enabled, and whether
+`jdtls` or `kotlin_lsp` are enabled for the same filetypes.
+
+==============================================================================
+8. TROUBLESHOOTING                                  *intellij-troubleshooting*
+
+Server not installed or EULA not accepted ~
+    Run `:IntelliJ install` or `:IntelliJ eula`. Acceptance is tied to the
+    hash of the EULA text, so a changed EULA must be accepted again.
+
+Workspace import failed ~
+    The notification lists each failed folder. Check that `mvn` is on $PATH
+    or the project has a wrapper and that `java_home` points to a JDK, then
+    run `:IntelliJ reload`.
+
+Server build has expired (exit code 7) ~
+    Preview builds expire about 30 days after release. Run
+    `:IntelliJ install` for the latest build and accept its EULA.
+
+Conflicting servers ~
+    Disable nvim-jdtls and lspconfig's `jdtls` and `kotlin_lsp` for the same
+    filetypes, e.g. `vim.lsp.enable('jdtls', false)`.
+
+Logs and index ~
+    Index and system data live in `stdpath('cache')/intellij/<hash>`, where
+    <hash> is the first 12 characters of the sha256 of the project root. The
+    server log is `<that>/system/log/intellij-server.log`, see
+    |:IntelliJ-log|. Import log messages go to the Neovim LSP log.
+
+Memory ~
+    Increase the heap with `jvm_options = { '-Xmx4g' }`.
+
+==============================================================================
+9. LICENSING                                              *intellij-licensing*
+
+The IntelliJ Language Server is proprietary JetBrains software under its own
+EULA. The preview is free, but each build expires after about 30 days. After
+the preview it requires an IntelliJ IDEA Ultimate subscription. This plugin
+does not bundle the server. The plugin itself is MIT licensed.
+
+ vim:tw=78:ts=8:noet:ft=help:norl:
