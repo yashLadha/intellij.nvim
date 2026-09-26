@@ -1,21 +1,60 @@
-# intellij.nvim
+<p align="center">
+  <img src="assets/banner.svg" alt="intellij.nvim" width="100%">
+</p>
 
-Run JetBrains' IntelliJ Language Server (the "Java & Kotlin by IntelliJ IDEA" preview, published as the VS Code extension `JetBrains.intellij-server`) inside Neovim >= 0.12 using the native `vim.lsp.config` / `vim.lsp.enable` API. The plugin downloads and verifies the server, handles EULA acceptance, starts one server per project root, opens decompiled JDK and library sources, and reports project import progress. It only attaches to the filetypes you configure: `java` by default, Kotlin is opt-in. See the [announcement](https://blog.jetbrains.com/idea/2026/08/intellij-idea-goes-lsp/) for background on the server.
+<p align="center">
+  <a href="https://neovim.io"><img src="https://img.shields.io/badge/Neovim-0.12%2B-57A143?style=flat-square&logo=neovim&logoColor=white" alt="Neovim 0.12+"></a>
+  <img src="https://img.shields.io/badge/Lua-2C2D72?style=flat-square&logo=lua&logoColor=white" alt="Lua">
+  <img src="https://img.shields.io/badge/Java%20%2B%20Kotlin-FF318C?style=flat-square&logo=intellijidea&logoColor=white" alt="Java and Kotlin">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="MIT license"></a>
+</p>
+
+<p align="center">
+  <b>The engine behind IntelliJ IDEA's Java and Kotlin support, running in Neovim through the built-in LSP client.</b>
+</p>
+
+<p align="center">
+  <a href="#installation">Installation</a> &bull;
+  <a href="#quick-start">Quick start</a> &bull;
+  <a href="#configuration">Configuration</a> &bull;
+  <a href="#completion">Completion</a> &bull;
+  <a href="#commands">Commands</a> &bull;
+  <a href="#troubleshooting">Troubleshooting</a>
+</p>
+
+---
+
+intellij.nvim runs JetBrains' IntelliJ Language Server, the "Java & Kotlin by IntelliJ IDEA" preview published as the VS Code extension `JetBrains.intellij-server`, inside Neovim >= 0.12 using the native `vim.lsp.config` / `vim.lsp.enable` API. It downloads and verifies the server, handles EULA acceptance, starts one server per project root, opens JDK and library sources, and reports project import progress. See the [announcement](https://blog.jetbrains.com/idea/2026/08/intellij-idea-goes-lsp/) for background on the server.
+
+## Why intellij.nvim
+
+- **IDE-grade analysis.** The same inspections, quick fixes and refactorings that power IntelliJ IDEA, including data-flow warnings such as "value of parameter is always ...".
+- **Native Neovim.** Built on `vim.lsp.config`, `vim.lsp.enable` and `lsp/intellij.lua`. No nvim-lspconfig, no wrapper UI, no custom keymaps.
+- **Opt-in filetypes.** Attaches to `java` by default and only to the filetypes you list; Kotlin is one entry away.
+- **One command setup.** `:IntelliJ install` fetches the right build for your platform, verifies its sha256 and walks you through the EULA.
+- **Real project import.** Maven, Gradle and Bazel projects are imported by the server, with progress and per-folder failure reports.
+- **Library navigation.** Go to definition lands in JDK and dependency sources, opened as read-only `jar:` / `jrt:` buffers that stay attached to the server.
 
 ## Features
 
-- Completion, including signature help triggered from completion items
-- Hover documentation
-- Go to definition, including JDK and library sources opened as read-only `jar:` / `jrt:` buffers
-- References, implementations, type definition
-- Rename
-- Code actions and quick fixes
-- Formatting
-- Diagnostics
-- Inlay hints
-- Semantic tokens
-- Call and type hierarchy
-- Maven, Gradle and Bazel project import with progress messages and failure notifications
+| Capability | How to use it in Neovim |
+| --- | --- |
+| Completion | `vim.lsp.completion` with autotrigger, blink.cmp or nvim-cmp (see [Completion](#completion)) |
+| Signature help | `<C-s>` in Insert mode, also triggered after accepting a method completion |
+| Hover documentation | `K` |
+| Go to definition, including library sources | `<C-]>` or `vim.lsp.buf.definition()` |
+| References, implementations, type definition | `grr`, `gri`, `grt` |
+| Rename | `grn` |
+| Code actions and quick fixes | `gra` |
+| Formatting | `vim.lsp.buf.format()` |
+| Diagnostics | `vim.diagnostic`, pulled and published by the server |
+| Inlay hints | `vim.lsp.inlay_hint.enable()` |
+| Semantic tokens | enabled automatically |
+| Call and type hierarchy | `vim.lsp.buf.incoming_calls()`, `vim.lsp.buf.typehierarchy('subtypes')` |
+| Document symbols | `gO` |
+| Project import | automatic, with progress messages; `:IntelliJ reload` to reimport |
+
+All keymaps above are Neovim core defaults (`:help lsp-defaults`); this plugin defines none.
 
 ## Requirements
 
@@ -56,8 +95,6 @@ require('intellij').setup({ filetypes = { 'java' } })
 1. Run `:IntelliJ install`. The latest server for your platform is downloaded, checksum verified and unpacked. Progress is shown in the message area.
 2. Accept the EULA. After a fresh install the EULA opens automatically in a new tab with an Accept / Decline prompt. Run `:IntelliJ eula` to show it again.
 3. Open a Java file inside a Maven, Gradle or Bazel project. The server starts, imports the project and reports progress ("importing workspace", then "workspace imported" or "workspace import failed").
-
-Neovim core provides default LSP keymaps, so none are defined by this plugin: `K` (hover), `grn` (rename), `gra` (code action), `grr` (references), `gri` (implementation), `grt` (type definition), `grx` (code lens), `gO` (document symbols), `<C-s>` in Insert mode (signature help). `<C-]>` goes to definition through `tagfunc`. See `:help lsp-defaults`.
 
 ## Configuration
 
@@ -157,6 +194,8 @@ Run `make test` for the headless test suite and `make lint` for the stylua check
 ## Licensing
 
 The IntelliJ Language Server is proprietary JetBrains software distributed under its own EULA, which you accept through `:IntelliJ eula`. The preview is free to use, but each build expires after about 30 days. After the preview period the server requires an IntelliJ IDEA Ultimate subscription. This plugin does not bundle or redistribute the server.
+
+intellij.nvim is a community project and is not affiliated with or endorsed by JetBrains. IntelliJ IDEA is a trademark of JetBrains s.r.o.
 
 ## License
 
